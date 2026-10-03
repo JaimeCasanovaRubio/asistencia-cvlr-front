@@ -20,36 +20,29 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-            
-      name: Descargar repositorio
-            uses: actions/checkout@v4
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
 
-            
-      name: Configurar Node.js
-            uses: actions/setup-node@v4
-            with:
-              node-version: 20
-              cache: 'npm'
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
 
-            
-      name: Instalar dependencias
-            run: npm ci
+      - name: Instalar dependencias
+        run: npm install
 
-            
-      name: Compilar Vite (genera dist)
-            run: npm run build
+      - name: Compilar Vite (genera dist)
+        run: npm run build
 
-            
-      name: Configurar Pages
-            uses: actions/configure-pages@v5
+      - name: Configurar Pages
+        uses: actions/configure-pages@v5
 
-            
-      name: Subir carpeta dist
-            uses: actions/upload-pages-artifact@v3
-            with:
-              path: './dist'
+      - name: Subir carpeta dist
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './dist'
 
-            
-      name: Desplegar
-            id: deployment
-            uses: actions/deploy-pages@v4
+      - name: Desplegar
+        id: deployment
+        uses: actions/deploy-pages@v4
