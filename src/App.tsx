@@ -18,7 +18,6 @@ export default function App() {
   const [players, setPlayers] = useState<Player[]>([]);
   const [attendances, setAttendances] = useState<Attendance[]>([]);
   const [loading, setLoading] = useState(false);
-
   // Hash Router idéntico (#/, #/team?id=..., #/player?team=...&player=...)
   const [routeHash, setRouteHash] = useState(window.location.hash || '#/');
 
@@ -34,6 +33,7 @@ export default function App() {
 
   // Formulario nuevo jugador
   const [newPlayerName, setNewPlayerName] = useState('');
+  const [newCoachEmail, SetNewCoachEmail] = useState("");
 
   // Fecha seleccionada
   const today = new Date().toISOString().split('T')[0];
@@ -161,7 +161,7 @@ export default function App() {
     return (
       <div className="container-app">
         <div className="flex justify-between items-center mb-3 px-1">
-          <span className="text-xs text-slate-400">CVLR Asistencia (Online)</span>
+          <span className="text-xs text-slate-400">CVLR Asistencia</span>
           <button
             type="button"
             onClick={handleLogout}
@@ -322,19 +322,16 @@ export default function App() {
       }
     };
 
-    const handleExportCsv = () => {
-      let csv = 'Fecha,Jugador,Estado\n';
-      for (const a of attendances) {
-        const owner = teamPlayers.find((p) => p.id === a.playerId);
-        if (owner) {
-          csv += `"${a.date}","${owner.name}","${a.status}"\n`;
-        }
+    const handleAddNewCoach = async (e: any) => {
+      try{
+        const res = await api.post("/teams/add_coach",{
+          coach_email: newCoachEmail,
+          team_id: team.id,
+        })
+
+      }catch(err){
+
       }
-      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = `asistencias_${team.name}_${effectiveDate}.csv`;
-      link.click();
     };
 
     return (
@@ -413,9 +410,15 @@ export default function App() {
             })
           )}
 
-          <button type="button" onClick={handleExportCsv} className="btn-export">
-            📥 Exportar CSV
-          </button>
+          <form onSubmit={handleAddNewCoach} className="row-form">
+            <input
+              type="text"
+              placeholder="Email Entrenador"
+              value={newPlayerName}
+              onChange={(e) => SetNewCoachEmail(e.target.value)}
+            />
+            <button type="submit" className="btn-main">Agregar</button>
+          </form>
         </div>
       </div>
     );
