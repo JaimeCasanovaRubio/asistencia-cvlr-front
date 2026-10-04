@@ -323,14 +323,18 @@ export default function App() {
     };
 
     const handleAddNewCoach = async (e: any) => {
-      try{
-        const res = await api.post("/teams/add_coach",{
-          coach_email: newCoachEmail,
-          team_id: team.id,
-        })
+      e.preventDefault();
+      if (!newCoachEmail.trim()) return;
 
-      }catch(err){
-
+      try {
+        const res = await api.post("/teams/add_coach", {
+        coach_email: newCoachEmail.trim(),
+        team_id: team.id,
+        });
+        alert(res.data.message || "Entrenador añadido con éxito");
+      } catch (err: any) {
+        const msg = err.response?.data?.detail || "No se ha podido realizar la acción";
+        alert(msg);
       }
     };
 
@@ -414,7 +418,7 @@ export default function App() {
             <input
               type="text"
               placeholder="Email Entrenador"
-              value={newPlayerName}
+              value={newCoachEmail}
               onChange={(e) => SetNewCoachEmail(e.target.value)}
             />
             <button type="submit" className="btn-main">Agregar</button>
