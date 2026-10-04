@@ -76,7 +76,7 @@ export default function App() {
       setLoading(true);
       // Peticiones en paralelo al backend
       const [resPlayers, resAttendances] = await Promise.all([
-        api.get(`/player/team/${teamId}/`),
+        api.get(`/player/team/${teamId}`),
         api.get(`/teams/${teamId}/attendances`),
       ]);
 
