@@ -83,7 +83,7 @@ export default function App() {
       setPlayers(
         resPlayers.data.map((p: any) => ({
           id: String(p.id),
-          teamId: String(p.team_id || p.teamId),
+          teamId: String(teamId),
           name: p.name,
         }))
       );
