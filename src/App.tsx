@@ -39,6 +39,64 @@ export default function App() {
   const today = new Date().toISOString().split('T')[0];
   const [selectedDate, setSelectedDate] = useState<string>(today);
   const [playerNotes, setPlayerNotes] = useState<Record<string, string>>({});
+  const [playerNoteList, setPlayerNoteList] = useState<Record<string, any[]>>({});
+
+  const normalizeNote = (raw: any, playerId: string) => ({
+    id: String(raw?.id ?? `${playerId}-${Date.now()}`),
+    playerId: String(raw?.player_id ?? raw?.playerId ?? playerId),
+    content: String(
+      raw?.content ?? raw?.note ?? raw?.text ?? raw?.description ?? raw?.message ?? ''
+    ).trim(),
+    createdAt: raw?.created_at ?? raw?.createdAt ?? raw?.date ?? null,
+  });
+
+  const loadPlayerNotes = async (playerId: string) => {
+    if (!playerId) return;
+
+    try {
+      const res = await api.get(`/notes/player/${playerId}`);
+      const rawNotes = Array.isArray(res.data)
+        ? res.data
+        : Array.isArray(res.data?.notes)
+          ? res.data.notes
+          : Array.isArray(res.data?.data)
+            ? res.data.data
+            : [];
+
+      setPlayerNoteList((prev) => ({
+        ...prev,
+        [playerId]: rawNotes.map((note: any) => normalizeNote(note, playerId)),
+      }));
+    } catch (err) {
+      console.error(`Error al cargar notas del jugador ${playerId}:`, err);
+    }
+  };
+
+  const savePlayerNote = async (playerId: string, content: string) => {
+    const value = content.trim();
+    if (!value) return;
+
+    try {
+      const payload = {
+        content: value,
+        note: value,
+        text: value,
+        description: value,
+      };
+
+      const res = await api.post(`/notes/player/${playerId}`, payload);
+      const created = normalizeNote(res.data, playerId);
+
+      setPlayerNoteList((prev) => ({
+        ...prev,
+        [playerId]: [created, ...(prev[playerId] || [])],
+      }));
+      setPlayerNotes((prev) => ({ ...prev, [playerId]: '' }));
+    } catch (err: any) {
+      const msg = err.response?.data?.detail || err.response?.data?.message || 'No se ha podido guardar la nota';
+      alert(msg);
+    }
+  };
 
   // 1. CARGA INICIAL DE EQUIPOS DESDE FASTAPI
   const fetchTeams = async () => {
@@ -503,6 +561,11 @@ export default function App() {
     }
 
     const currentNote = playerNotes[player.id] || '';
+    const notes = playerNoteList[player.id] || [];
+
+    useEffect(() => {
+      loadPlayerNotes(player.id);
+    }, [player.id]);
 
     return (
       <div className="container-app">
@@ -515,7 +578,7 @@ export default function App() {
         <div className="card">
           <textarea
             value={currentNote}
-            rows={8}
+            rows={6}
             placeholder="Ej: Buen trabajo en defensa, necesita mejorar el pase..."
             onChange={(e) =>
               setPlayerNotes((prev) => ({
@@ -528,11 +591,30 @@ export default function App() {
 
           <div className="flex justify-between items-center mt-3">
             <span className="muted">
-              {currentNote.trim() ? 'Nota guardada localmente' : 'Sin notas aún'}
+              {notes.length} nota{notes.length === 1 ? '' : 's'} guardada{notes.length === 1 ? '' : 's'}
             </span>
-            <a href={`#/player-menu?team=${team.id}&player=${player.id}`} className="btn-main">
-              Volver
-            </a>
+            <button
+              type="button"
+              className="btn-main"
+              onClick={() => savePlayerNote(player.id, currentNote)}
+            >
+              Guardar nota
+            </button>
+          </div>
+
+          <div className="mt-4">
+            <div className="text-xs text-slate-400 mb-2">Notas anteriores</div>
+            {notes.length === 0 ? (
+              <p className="muted">Todavía no hay notas para este jugador.</p>
+            ) : (
+              <ul style={{ margin: 0, paddingLeft: '1.1rem' }}>
+                {notes.map((note, idx) => (
+                  <li key={`${player.id}-${note.id || idx}`} className="mb-2">
+                    {note.content}
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </div>
       </div>
