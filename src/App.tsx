@@ -38,6 +38,7 @@ export default function App() {
   // Fecha seleccionada
   const today = new Date().toISOString().split('T')[0];
   const [selectedDate, setSelectedDate] = useState<string>(today);
+  const [playerNotes, setPlayerNotes] = useState<Record<string, string>>({});
 
   // 1. CARGA INICIAL DE EQUIPOS DESDE FASTAPI
   const fetchTeams = async () => {
@@ -387,7 +388,7 @@ export default function App() {
               return (
                 <div key={p.id} className="row">
                   <div>
-                    <a href={`#/player?team=${team.id}&player=${p.id}`}>
+                    <a href={`#/player-menu?team=${team.id}&player=${p.id}`}>
                       <b>{p.name}</b>
                     </a>
                     <div className="muted">{playerPct}% asistencia</div>
@@ -423,6 +424,116 @@ export default function App() {
             />
             <button type="submit" className="btn-main">Agregar</button>
           </form>
+        </div>
+      </div>
+    );
+  }
+
+  // ------------------------------------------------------------
+  // PANTALLA 3: Menú del Jugador (#/player-menu?team=...&player=...)
+  // ------------------------------------------------------------
+  if (path === '#/player-menu') {
+    const teamId = params.get('team') || '';
+    const playerId = params.get('player') || '';
+    const team = teams.find((t) => t.id === teamId);
+    const player = players.find((p) => p.id === playerId);
+
+    if (!team || !player) {
+      return (
+        <div className="container-app">
+          <div className="card">
+            <p className="muted">Cargando jugador...</p>
+            <a href={`#/team?id=${teamId}`}>← Volver al equipo</a>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="container-app">
+        <div className="card">
+          <a href={`#/team?id=${team.id}`}>← {team.name}</a>
+          <h1 className="mt-2">{player.name}</h1>
+          <p className="muted">Selecciona qué quieres consultar</p>
+        </div>
+
+        <div className="card">
+          <div className="row">
+            <div>
+              <b>Asistencia</b>
+              <div className="muted">Revisa y marca la presencia del jugador</div>
+            </div>
+            <a href={`#/player?team=${team.id}&player=${player.id}`} className="btn-main">
+              Abrir
+            </a>
+          </div>
+
+          <div className="row">
+            <div>
+              <b>Notas</b>
+              <div className="muted">Añade comentarios o incidencias</div>
+            </div>
+            <a href={`#/player-notes?team=${team.id}&player=${player.id}`} className="btn-main">
+              Abrir
+            </a>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ------------------------------------------------------------
+  // PANTALLA 4: Notas del Jugador (#/player-notes?team=...&player=...)
+  // ------------------------------------------------------------
+  if (path === '#/player-notes') {
+    const teamId = params.get('team') || '';
+    const playerId = params.get('player') || '';
+    const team = teams.find((t) => t.id === teamId);
+    const player = players.find((p) => p.id === playerId);
+
+    if (!team || !player) {
+      return (
+        <div className="container-app">
+          <div className="card">
+            <p className="muted">Cargando notas...</p>
+            <a href={`#/team?id=${teamId}`}>← Volver al equipo</a>
+          </div>
+        </div>
+      );
+    }
+
+    const currentNote = playerNotes[player.id] || '';
+
+    return (
+      <div className="container-app">
+        <div className="card">
+          <a href={`#/player-menu?team=${team.id}&player=${player.id}`}>← Volver</a>
+          <h1 className="mt-2">Notas de {player.name}</h1>
+          <p className="muted">Escribe información útil sobre el jugador.</p>
+        </div>
+
+        <div className="card">
+          <textarea
+            value={currentNote}
+            rows={8}
+            placeholder="Ej: Buen trabajo en defensa, necesita mejorar el pase..."
+            onChange={(e) =>
+              setPlayerNotes((prev) => ({
+                ...prev,
+                [player.id]: e.target.value,
+              }))
+            }
+            style={{ width: '100%', resize: 'vertical' }}
+          />
+
+          <div className="flex justify-between items-center mt-3">
+            <span className="muted">
+              {currentNote.trim() ? 'Nota guardada localmente' : 'Sin notas aún'}
+            </span>
+            <a href={`#/player-menu?team=${team.id}&player=${player.id}`} className="btn-main">
+              Volver
+            </a>
+          </div>
         </div>
       </div>
     );
