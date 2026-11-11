@@ -40,6 +40,7 @@ export default function App() {
   const [selectedDate, setSelectedDate] = useState<string>(today);
   const [playerNotes, setPlayerNotes] = useState<Record<string, string>>({});
   const [playerNoteList, setPlayerNoteList] = useState<Record<string, any[]>>({});
+  const [notesError, setNotesError] = useState<string | null>(null);
 
   const normalizeNote = (raw: any, playerId: string) => ({
     id: String(raw?.id ?? `${playerId}-${Date.now()}`),
@@ -54,6 +55,7 @@ export default function App() {
     if (!playerId) return;
 
     try {
+      setNotesError(null);
       const res = await api.get(`/notes/player/${playerId}`);
       const rawNotes = Array.isArray(res.data)
         ? res.data
@@ -69,6 +71,7 @@ export default function App() {
       }));
     } catch (err) {
       console.error(`Error al cargar notas del jugador ${playerId}:`, err);
+      setNotesError('No se puede conectar con la API de notas en este momento.');
     }
   };
 
@@ -77,6 +80,7 @@ export default function App() {
     if (!value) return;
 
     try {
+      setNotesError(null);
       const payload = {
         content: value,
         note: value,
@@ -94,7 +98,7 @@ export default function App() {
       setPlayerNotes((prev) => ({ ...prev, [playerId]: '' }));
     } catch (err: any) {
       const msg = err.response?.data?.detail || err.response?.data?.message || 'No se ha podido guardar la nota';
-      alert(msg);
+      setNotesError(msg);
     }
   };
 
@@ -576,6 +580,22 @@ export default function App() {
         </div>
 
         <div className="card">
+          {notesError && (
+            <div
+              style={{
+                backgroundColor: '#2b1f1f',
+                border: '1px solid #7f1d1d',
+                color: '#fecaca',
+                borderRadius: 8,
+                padding: '10px 12px',
+                marginBottom: 12,
+                fontSize: 13,
+              }}
+            >
+              {notesError}
+            </div>
+          )}
+
           <textarea
             value={currentNote}
             rows={6}
@@ -586,7 +606,7 @@ export default function App() {
                 [player.id]: e.target.value,
               }))
             }
-            style={{ width: '100%', resize: 'vertical' }}
+            style={{ width: '100%', resize: 'vertical', backgroundColor: '#0f172a', color: '#f8fafc' }}
           />
 
           <div className="flex justify-between items-center mt-3">
@@ -605,7 +625,9 @@ export default function App() {
           <div className="mt-4">
             <div className="text-xs text-slate-400 mb-2">Notas anteriores</div>
             {notes.length === 0 ? (
-              <p className="muted">Todavía no hay notas para este jugador.</p>
+              <p className="muted">
+                {notesError ? 'No se pudieron cargar las notas, pero puedes escribir una nueva.' : 'Todavía no hay notas para este jugador.'}
+              </p>
             ) : (
               <ul style={{ margin: 0, paddingLeft: '1.1rem' }}>
                 {notes.map((note, idx) => (
