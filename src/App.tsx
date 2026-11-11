@@ -42,14 +42,18 @@ export default function App() {
   const [playerNoteList, setPlayerNoteList] = useState<Record<string, any[]>>({});
   const [notesError, setNotesError] = useState<string | null>(null);
 
-  const normalizeNote = (raw: any, playerId: string) => ({
-    id: String(raw?.id ?? `${playerId}-${Date.now()}`),
-    playerId: String(raw?.player_id ?? raw?.playerId ?? playerId),
-    content: String(
-      raw?.content ?? raw?.note ?? raw?.text ?? raw?.description ?? raw?.message ?? ''
-    ).trim(),
-    createdAt: raw?.created_at ?? raw?.createdAt ?? raw?.date ?? null,
-  });
+  const normalizeNote = (raw: any, playerId: string) => {
+    const source = raw && typeof raw === 'object' ? raw : { content: raw ?? '' };
+
+    return {
+      id: String(source?.id ?? `${playerId}-${Date.now()}`),
+      playerId: String(source?.player_id ?? source?.playerId ?? playerId),
+      content: String(
+        source?.content ?? source?.note ?? source?.text ?? source?.description ?? source?.message ?? ''
+      ).trim(),
+      createdAt: source?.created_at ?? source?.createdAt ?? source?.date ?? null,
+    };
+  };
 
   const loadPlayerNotes = async (playerId: string) => {
     if (!playerId) return;
@@ -81,15 +85,13 @@ export default function App() {
 
     try {
       setNotesError(null);
-      const payload = {
-        content: value,
-        note: value,
-        text: value,
-        description: value,
-      };
+      const payload = { content: value };
 
       const res = await api.post(`/notes/player/${playerId}`, payload);
-      const created = normalizeNote(res.data, playerId);
+      const created = normalizeNote(
+        Array.isArray(res.data) ? res.data[0] : res.data,
+        playerId
+      );
 
       setPlayerNoteList((prev) => ({
         ...prev,
@@ -97,7 +99,10 @@ export default function App() {
       }));
       setPlayerNotes((prev) => ({ ...prev, [playerId]: '' }));
     } catch (err: any) {
-      const msg = err.response?.data?.detail || err.response?.data?.message || 'No se ha podido guardar la nota';
+      const msg =
+        err.response?.data?.detail ||
+        err.response?.data?.message ||
+        'No se ha podido guardar la nota';
       setNotesError(msg);
     }
   };
@@ -581,19 +586,19 @@ export default function App() {
 
         <div className="card">
           {notesError && (
-            <div
+            <p
+              className="muted"
               style={{
-                backgroundColor: '#2b1f1f',
-                border: '1px solid #7f1d1d',
-                color: '#fecaca',
+                border: '1px solid #334155',
                 borderRadius: 8,
-                padding: '10px 12px',
+                padding: '8px 10px',
                 marginBottom: 12,
-                fontSize: 13,
+                background: 'transparent',
+                color: '#cbd5e1',
               }}
             >
               {notesError}
-            </div>
+            </p>
           )}
 
           <textarea
