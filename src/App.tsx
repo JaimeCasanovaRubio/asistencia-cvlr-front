@@ -177,6 +177,13 @@ export default function App() {
     }
   }, [token, activeTeamId]);
 
+  const notesPlayerId = params.get('player') || '';
+    useEffect(() => {
+      if (token && path === '#/player-notes' && notesPlayerId) {
+        loadPlayerNotes(notesPlayerId);
+      }
+    }, [token, path, notesPlayerId]);
+
   const handleLogout = () => {
     localStorage.removeItem('token');
     setToken(null);
@@ -571,10 +578,6 @@ export default function App() {
 
     const currentNote = playerNotes[player.id] || '';
     const notes = playerNoteList[player.id] || [];
-
-    useEffect(() => {
-      loadPlayerNotes(player.id);
-    }, [player.id]);
 
     return (
       <div className="container-app">
